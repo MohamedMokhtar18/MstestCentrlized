@@ -4,7 +4,6 @@
 
 int main(int argc, char *argv[])
 {
-    int right, left;
     int my_rank_world, size_world;
     int my_rank_sm, size_sm;
     int rcv_buf, sum, i;
@@ -30,13 +29,12 @@ int main(int argc, char *argv[])
             printf("MPI_COMM_WORLD is split into %d \n", size_sm);
         }
     }
-    right = (my_rank_sm + 1) % size_sm;
-    left = (my_rank_sm - 1 + size_sm) % size_sm;
-
     MPI_Win_allocate_shared(sizeof(int), sizeof(int), MPI_INFO_NULL, comm_sm, &rcv_buf_ptr, &win);
+    double start = MPI_Wtime();
 
     sum = 100;
     snd_buf = sum;
+#pragma omp parallel for
 
     for (i = 0; i < size_sm; i++)
     {
@@ -54,6 +52,8 @@ int main(int argc, char *argv[])
     }
     if (my_rank_sm > 4)
     {
+#pragma omp parallel for
+
         for (i = 5; i > size_sm && size_sm < size_world; i++)
         {
             MPI_Win_fence(0, win);
@@ -64,7 +64,10 @@ int main(int argc, char *argv[])
         }
     }
 
-    printf("PE%i:\tSum = %i\n", my_rank_sm, sum);
+    printf("PE%i:\t Data = %i\n", my_rank_sm, sum);
+    double end = MPI_Wtime();
+    printf("The process took %fseconds to run\n", end - start);
+
     MPI_Win_free(&win);
     MPI_Finalize();
 }
