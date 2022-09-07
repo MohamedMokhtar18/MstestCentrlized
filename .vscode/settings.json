@@ -34,6 +34,7 @@
     "string_view": "c",
     "initializer_list": "c",
     "utility": "c",
-    "scatterone.h": "c"
+    "scatterone.h": "c",
+    "functional": "c"
   }
 }
