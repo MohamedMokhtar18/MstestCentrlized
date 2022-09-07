@@ -36,28 +36,32 @@ int main(int argc, char *argv[])
 
     sum = 100000000;
     snd_buf = sum;
+    MPI_Win_lock_all(0, win);
 
     for (i = 0; i < 4; i++)
     {
 
-        MPI_Win_lock_all(0, win);
         *(rcv_buf_ptr) = snd_buf; // to store into right neighbor's rcv_buf
-        MPI_Win_unlock_all(win);
 
         snd_buf = *rcv_buf_ptr;
 
         sum = *rcv_buf_ptr;
     }
+    MPI_Win_unlock_all(win);
+
     if (my_rank_sm > 4)
     {
 
         for (i = 5; i > size_sm && size_sm < size_world; i++)
         {
-            MPI_Win_lock(MPI_LOCK_EXCLUSIVE, (i - 4), 0, win);
-            MPI_Get(&rcv_buf, 1, MPI_INT, (i - 4), (MPI_Aint)0, 1, MPI_INT, win);
-            // MPI_Put(&snd_buf, 1, MPI_INT, right, (MPI_Aint)0, 1, MPI_INT, win);
-            MPI_Win_unlock((i - 4), win);
-            sum = *rcv_buf_ptr;
+            if (my_rank_sm > i)
+            {
+                MPI_Win_lock(MPI_LOCK_EXCLUSIVE, (i - 4), 0, win);
+                MPI_Get(&rcv_buf, 1, MPI_INT, (i - 4), (MPI_Aint)0, 1, MPI_INT, win);
+                // MPI_Put(&snd_buf, 1, MPI_INT, right, (MPI_Aint)0, 1, MPI_INT, win);
+                MPI_Win_unlock((i - 4), win);
+                sum = *rcv_buf_ptr;
+            }
         }
     }
     MPI_Win_sync(win);
